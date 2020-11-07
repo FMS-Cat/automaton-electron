@@ -1,0 +1,182 @@
+name: Build automaton-electron
+on:
+  push:
+    paths:
+      - '**'
+      - '!packages/**'
+      - 'packages/automaton/**'
+      - 'packages/automaton-with-gui/**'
+      - 'packages/automaton-electron/**'
+defaults:
+  run:
+    shell: bash
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Cache Deps
+      uses: actions/cache@v1
+      with:
+        path: |
+          node_modules
+        key: ${{ runner.os }}-yarn-${{ hashFiles( 'yarn.lock' ) }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+    - name: Fetch Deps
+      run: yarn
+  build-automaton:
+    runs-on: ubuntu-latest
+    needs: fetch
+    defaults:
+      run:
+        working-directory: packages/automaton
+    steps:
+    - uses: actions/checkout@v2
+    - name: Cache Deps
+      uses: actions/cache@v1
+      with:
+        path: |
+          node_modules
+        key: ${{ runner.os }}-yarn-${{ hashFiles( 'yarn.lock' ) }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+    - name: Build
+      run: yarn build
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: build-automaton
+        path: |
+          packages/automaton/dist/
+          packages/automaton/types/
+  build-automaton-with-gui:
+    runs-on: ubuntu-latest
+    needs: build-automaton
+    defaults:
+      run:
+        working-directory: packages/automaton-with-gui
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/download-artifact@v2
+      with:
+        name: build-automaton
+        path: packages/automaton
+    - name: Cache Deps
+      uses: actions/cache@v1
+      with:
+        path: |
+          node_modules
+        key: ${{ runner.os }}-yarn-${{ hashFiles( 'yarn.lock' ) }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+    - name: Build
+      run: yarn build
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: build-automaton-with-gui
+        path: |
+          packages/automaton-with-gui/dist/
+          packages/automaton-with-gui/types/
+  build-win:
+    runs-on: windows-latest
+    needs: build-automaton-with-gui
+    defaults:
+      run:
+        working-directory: packages/automaton-electron
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/download-artifact@v2
+      with:
+        name: build-automaton
+        path: packages/automaton
+    - uses: actions/download-artifact@v2
+      with:
+        name: build-automaton-with-gui
+        path: packages/automaton-with-gui
+    - name: Cache Deps
+      uses: actions/cache@v2
+      with:
+        path: |
+          node_modules
+        key: ${{ runner.os }}-yarn-${{ hashFiles( 'yarn.lock' ) }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+    - name: Fetch Deps
+      shell: cmd
+      run: yarn
+    - name: Build
+      shell: cmd
+      run: yarn build
+    - name: Upload Builds
+      uses: actions/upload-artifact@v1
+      with:
+        name: automaton-electron-windows
+        path: dist
+  build-mac:
+    runs-on: macos-latest
+    needs: build-automaton-with-gui
+    defaults:
+      run:
+        working-directory: packages/automaton-electron
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/download-artifact@v2
+      with:
+        name: build-automaton
+        path: packages/automaton
+    - uses: actions/download-artifact@v2
+      with:
+        name: build-automaton-with-gui
+        path: packages/automaton-with-gui
+    - name: Cache Deps
+      uses: actions/cache@v2
+      with:
+        path: |
+          node_modules
+        key: ${{ runner.os }}-yarn-${{ hashFiles( 'yarn.lock' ) }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+    - name: Fetch Deps
+      run: yarn
+    - name: Build
+      run: yarn build
+    - name: Upload Builds
+      uses: actions/upload-artifact@v1
+      with:
+        name: automaton-electron-macos
+        path: dist
+  build-linux:
+    runs-on: ubuntu-latest
+    needs: build-automaton-with-gui
+    defaults:
+      run:
+        working-directory: packages/automaton-electron
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/download-artifact@v2
+      with:
+        name: build-automaton
+        path: packages/automaton
+    - uses: actions/download-artifact@v2
+      with:
+        name: build-automaton-with-gui
+        path: packages/automaton-with-gui
+    - name: Cache Deps
+      uses: actions/cache@v2
+      with:
+        path: |
+          node_modules
+        key: ${{ runner.os }}-yarn-${{ hashFiles( 'yarn.lock' ) }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+    - name: Fetch Deps
+      run: yarn
+    - name: Build
+      run: yarn build
+    - name: Upload Builds
+      uses: actions/upload-artifact@v1
+      with:
+        name: automaton-electron-linux
+        path: dist
